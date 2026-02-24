@@ -66,6 +66,49 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.observe(el);
     });
 
+    // Contact form submit handler - Firebase Firestore
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const btn = this.querySelector('.submit-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Sending...';
+            btn.disabled = true;
+
+            const name = this.name.value.trim();
+            const mobile = this.mobile.value.trim();
+            const email = this.email.value.trim();
+            const message = this.message.value.trim();
+
+            const db = firebase.firestore();
+
+            db.collection('contact_submissions').add({
+                name: name,
+                mobile: mobile,
+                email: email,
+                message: message,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                btn.textContent = 'Message Sent!';
+                btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                contactForm.reset();
+            })
+            .catch((err) => {
+                btn.textContent = 'Error. Try again';
+                btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    btn.style.background = '';
+                }, 3000);
+            });
+        });
+    }
+
     // Dynamic Header background on scroll
     const header = document.querySelector('header');
     window.addEventListener('scroll', () => {

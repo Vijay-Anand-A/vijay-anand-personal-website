@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Vijay Anand A</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dashboard-topbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 1.5rem 5%;
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .welcome-text {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .profile-menu {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+        }
+        .profile-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            object-fit: cover;
+            border: 2px solid rgba(148, 163, 184, 0.7);
+        }
+        .profile-menu i {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .profile-dropdown {
+            position: absolute;
+            right: 0;
+            top: 120%;
+            background: var(--glass-bg);
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
+            min-width: 180px;
+            padding: 0.5rem 0;
+            display: none;
+            z-index: 20;
+        }
+        .profile-dropdown.open {
+            display: block;
+        }
+        .profile-dropdown button {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            text-align: left;
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .profile-dropdown button:hover {
+            background: rgba(148, 163, 184, 0.15);
+        }
+        .enquiry-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        .enquiry-table thead {
+            background: rgba(15, 23, 42, 0.9);
+        }
+        .enquiry-table th,
+        .enquiry-table td {
+            padding: 0.9rem 0.8rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            text-align: left;
+        }
+        .enquiry-table th {
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+        }
+        .enquiry-table tbody tr:hover {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0.2rem 0.4rem;
+            font-size: 1rem;
+        }
+        .icon-btn:hover {
+            color: var(--primary);
+        }
+        .read-icon {
+            color: #22c55e;
+            font-size: 1.1rem;
+        }
+        .tag-pill {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.15);
+            color: #bfdbfe;
+            font-size: 0.8rem;
+        }
+        .new-badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(248, 250, 252, 0.02);
+            border: 1px solid rgba(251, 191, 36, 0.65);
+            color: #fde68a;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+        @media (max-width: 768px) {
+            .dashboard-topbar {
+                justify-content: center;
+            }
+            .topbar-right {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.5rem;
+            }
+            .enquiry-table th,
+            .enquiry-table td {
+                padding: 0.6rem 0.5rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-topbar">
+        <div class="topbar-right">
+            <span class="welcome-text">Welcome, Vijay</span>
+            <div class="profile-menu" id="profileMenu">
+                <img src="profile.png" alt="Profile" class="profile-avatar">
+                <i class="fas fa-chevron-down"></i>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <button type="button" data-action="change-password">Change Password</button>
+                    <button type="button" data-action="logout">Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <section class="contact">
+            <div class="container">
+                <h2 class="section-title">Enquiry List</h2>
+                <div class="glass-card">
+                    <div class="table-responsive">
+                    <table class="enquiry-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Mobile</th>
+                                <th>Email</th>
+                                <th>Message</th>
+                                <th>Created At</th>
+                                <th>Read</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="enquiryTableBody">
+                            <tr>
+                                <td colspan="8">Loading enquiries...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsO0-hfXME1aStmeQjEVW70e2UJVOyWy4",
+            authDomain: "personal-website-68a83.firebaseapp.com",
+            projectId: "personal-website-68a83",
+            storageBucket: "personal-website-68a83.firebasestorage.app",
+            messagingSenderId: "49631516586",
+            appId: "1:49631516586:web:0a2b14c5b3d72e5dadfdd3"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
+
