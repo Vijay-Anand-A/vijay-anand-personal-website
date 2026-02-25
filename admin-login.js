@@ -6,13 +6,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminDocRef = db.collection('admins').doc('mainAdmin');
 
     // Ensure admin credentials exist in Firestore (username: admin, password: 9489318959@123!)
-    adminDocRef.set(
-        {
-            username: 'admin',
-            password: '9489318959@123!'
-        },
-        { merge: true }
-    );
+  /*  const now = new Date();
+
+    // get 12-hour format hour + AM/PM
+    let manikoor = now.getHours();
+    const ravileorvaikuneram = manikoor >= 12 ? 'PM' : 'AM';
+    manikoor = manikoor % 12;
+    if (manikoor === 0) manikoor = 12; // 0 -> 12
+    
+    const password = `9489318959@123!${manikoor}${ravileorvaikuneram}`;
+    
+    adminDocRef.set({
+        username: 'admin',
+        password: password
+    });*/
 
     const statusEl = document.createElement('div');
     statusEl.style.marginTop = '1rem';
