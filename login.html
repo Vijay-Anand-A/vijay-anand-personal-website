@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <main>
         <section id="login" class="contact">
@@ -30,19 +32,9 @@
         </section>
     </main>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCsO0-hfXME1aStmeQjEVW70e2UJVOyWy4",
-            authDomain: "personal-website-68a83.firebaseapp.com",
-            projectId: "personal-website-68a83",
-            storageBucket: "personal-website-68a83.firebasestorage.app",
-            messagingSenderId: "49631516586",
-            appId: "1:49631516586:web:0a2b14c5b3d72e5dadfdd3"
-        };
-        firebase.initializeApp(firebaseConfig);
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="admin-login.js"></script>
 </body>
+
 </html>

@@ -5,9 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const db = firebase.firestore();
-    const adminDocRef = db.collection('admins').doc('mainAdmin');
-
     const profileMenu = document.getElementById('profileMenu');
     const profileDropdown = document.getElementById('profileDropdown');
     const tableBody = document.getElementById('enquiryTableBody');
@@ -43,14 +40,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPass = prompt('Enter new admin password:');
         if (!newPass) return;
         try {
-            await adminDocRef.update({ password: newPass });
+            const { error } = await supabaseClient
+                .from('admins')
+                .update({ password: newPass })
+                .eq('doc_key', 'mainAdmin');
+
+            if (error) throw error;
             alert('Password updated successfully.');
         } catch (err) {
             alert('Failed to update password. Please try again.');
         }
     }
 
-    // Load enquiries from Firestore
+    // Load enquiries from Supabase
     async function loadEnquiries() {
         if (!tableBody) return;
         tableBody.innerHTML = `
@@ -60,12 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         try {
-            const snapshot = await db
-                .collection('contact_submissions')
-                .orderBy('createdAt', 'desc')
-                .get();
+            const { data, error } = await supabaseClient
+                .from('contact_submissions')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-            if (snapshot.empty) {
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="8">No enquiries found.</td>
@@ -76,18 +80,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let index = 1;
             const rows = [];
-            snapshot.forEach((doc) => {
-                const d = doc.data();
-                const created = d.createdAt && d.createdAt.toDate
-                    ? d.createdAt.toDate()
+            data.forEach((d) => {
+                const created = d.created_at
+                    ? new Date(d.created_at)
                     : null;
                 const createdStr = created
                     ? created.toLocaleString()
                     : '-';
-                const isRead = !!d.isRead;
+                const isRead = !!d.is_read;
 
                 rows.push(`
-                    <tr data-id="${doc.id}" data-read="${isRead ? '1' : '0'}">
+                    <tr data-id="${d.id}" data-read="${isRead ? '1' : '0'}">
                         <td>${index++}</td>
                         <td>${(d.name || '').replace(/</g, '&lt;')}</td>
                         <td>${(d.mobile || '').replace(/</g, '&lt;')}</td>
@@ -133,7 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ok = confirm('Are you sure you want to delete this enquiry?');
                 if (!ok) return;
                 try {
-                    await db.collection('contact_submissions').doc(id).delete();
+                    const { error } = await supabaseClient
+                        .from('contact_submissions')
+                        .delete()
+                        .eq('id', parseInt(id));
+
+                    if (error) throw error;
                     row.remove();
                 } catch (err) {
                     alert('Failed to delete. Please try again.');
@@ -145,7 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const current = row.getAttribute('data-read') === '1';
                 const next = !current;
                 try {
-                    await db.collection('contact_submissions').doc(id).update({ isRead: next });
+                    const { error } = await supabaseClient
+                        .from('contact_submissions')
+                        .update({ is_read: next })
+                        .eq('id', parseInt(id));
+
+                    if (error) throw error;
                     row.setAttribute('data-read', next ? '1' : '0');
                     const btn = row.querySelector('.read-toggle');
                     if (btn) {
@@ -160,4 +173,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-

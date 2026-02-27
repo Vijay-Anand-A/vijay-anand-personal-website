@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hamburger.addEventListener('click', () => {
         navLinks.classList.toggle('active');
         const icon = hamburger.querySelector('i');
-        if(navLinks.classList.contains('active')) {
+        if (navLinks.classList.contains('active')) {
             icon.classList.remove('fa-bars');
             icon.classList.add('fa-times');
         } else {
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
             navLinks.classList.remove('active');
-            
+
             // reset hamburger icon
             const icon = hamburger.querySelector('i');
             icon.classList.remove('fa-times');
@@ -66,10 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.observe(el);
     });
 
-    // Contact form submit handler - Firebase Firestore
+    // Contact form submit handler - Supabase
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
-        contactForm.addEventListener('submit', function (e) {
+        contactForm.addEventListener('submit', async function (e) {
             e.preventDefault();
             const btn = this.querySelector('.submit-btn');
             const originalText = btn.textContent;
@@ -81,31 +81,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = this.email.value.trim();
             const message = this.message.value.trim();
 
-            const db = firebase.firestore();
+            try {
+                console.log('Supabase client:', supabaseClient);
+                const { data, error } = await supabaseClient
+                    .from('contact_submissions')
+                    .insert([{
+                        name: name,
+                        mobile: mobile,
+                        email: email,
+                        message: message,
+                        is_read: false
+                    }]);
 
-            db.collection('contact_submissions').add({
-                name: name,
-                mobile: mobile,
-                email: email,
-                message: message,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
+                console.log('Insert result:', { data, error });
+                if (error) throw error;
+
                 btn.textContent = 'Message Sent!';
                 btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
                 contactForm.reset();
-            })
-            .catch((err) => {
+            } catch (err) {
+                console.error('Contact form error:', err);
                 btn.textContent = 'Error. Try again';
                 btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-            })
-            .finally(() => {
+            } finally {
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.disabled = false;
                     btn.style.background = '';
                 }, 3000);
-            });
+            }
         });
     }
 
