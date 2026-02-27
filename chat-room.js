@@ -1,4 +1,14 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Ensure Supabase client is available
+        if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+            console.error('[chat-room] supabaseClient is not initialized. Check supabase-config.js and CDN load order.');
+            return;
+        }
+    } catch (e) {
+        console.error('[chat-room] error checking supabaseClient', e);
+        return;
+    }
     // Determine mode: normal chat user or admin opening a chat with a user
     const adminMode = sessionStorage.getItem('adminChat') === 'true';
     const chatUser = sessionStorage.getItem('chatUser');
@@ -22,6 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('chatInput');
     const chatSendBtn = document.getElementById('chatSendBtn');
     const chatBackBtn = document.getElementById('chatBackBtn');
+
+    // Basic DOM sanity checks
+    if (!chatMessages || !chatInput || !chatSendBtn || !chatBackBtn) {
+        console.error('[chat-room] missing DOM elements:', {
+            chatMessages: !!chatMessages,
+            chatInput: !!chatInput,
+            chatSendBtn: !!chatSendBtn,
+            chatBackBtn: !!chatBackBtn
+        });
+        return;
+    }
 
     // Update header (show user when admin opens chat)
     const headerNameEl = document.querySelector('.chat-header-info h3');
@@ -118,6 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Last fetched message timestamp (used by polling). Declare early so functions can reference it.
     let lastFetchedAt = null;
 
+    // Polling config and timer (declare early to avoid TDZ when startPolling is called)
+    const POLL_INTERVAL_MS = 3000;
+    let pollTimer = null;
+
     // When we load the full list, mark existing ids
     function markLoadedMessageIds(messages) {
         if (!messages) return;
@@ -156,7 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    loadMessages();
+    // Load messages first, then start polling
+    try {
+        await loadMessages();
+    } catch (e) {
+        console.error('[chat-room] loadMessages failed on init', e);
+    }
     // Start polling for notifications and new messages
     startPolling();
 
@@ -169,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatSendBtn.disabled = true;
 
         try {
-                const payload = adminMode ? {
+                    const payload = adminMode ? {
                     sender_username: 'admin',
                     receiver_username: chatUser,
                     message: text
@@ -179,12 +209,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     message: text
                 };
 
-                const { error, data } = await supabaseClient
-                    .from('chat_messages')
-                    .insert([payload])
-                    .select();
+                    console.debug('[chat-room] sendMessage payload', { payload, adminMode, chatUser });
+                    if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+                        console.error('[chat-room] supabaseClient missing when sending message');
+                        throw new Error('supabaseClient not initialized');
+                    }
 
-                if (error) throw error;
+                    const { data, error } = await supabaseClient
+                        .from('chat_messages')
+                        .insert([payload])
+                        .select();
+
+                    console.debug('[chat-room] sendMessage result', { data, error });
+                    if (error) throw error;
 
                 // Set conversation-level notification to 'new' so the other side knows to reload message area
                 try {
@@ -291,8 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Polling fallback: fetch messages newer than lastFetchedAt every few seconds
-    const POLL_INTERVAL_MS = 3000;
-    let pollTimer = null;
 
     async function pollNewMessages() {
         if (!chatUser) return;
