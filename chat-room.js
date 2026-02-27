@@ -115,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track appended message ids to avoid duplicates when both realtime and polling run
     const appendedMessageIds = new Set();
 
+    // Last fetched message timestamp (used by polling). Declare early so functions can reference it.
+    let lastFetchedAt = null;
+
     // When we load the full list, mark existing ids
     function markLoadedMessageIds(messages) {
         if (!messages) return;
@@ -140,12 +143,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
             renderMessages(data);
             markLoadedMessageIds(data || []);
+            // After loading the conversation (message area reload), mark notification as handled ('no')
+            try {
+                await supabaseClient
+                    .from('chat_notifications')
+                    .upsert([{ chat_username: chatUser, status: 'no' }], { onConflict: 'chat_username' });
+            } catch (e) {
+                console.error('[chat-room] failed to clear notification', e);
+            }
         } catch (err) {
             console.error('Load messages error:', err);
         }
     }
 
     loadMessages();
+    // Start polling for notifications and new messages
+    startPolling();
 
     // Send message
     async function sendMessage() {
@@ -166,12 +179,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     message: text
                 };
 
-                const { error } = await supabaseClient
+                const { error, data } = await supabaseClient
                     .from('chat_messages')
-                    .insert([payload]);
+                    .insert([payload])
+                    .select();
 
-            if (error) throw error;
-            loadMessages();
+                if (error) throw error;
+
+                // Set conversation-level notification to 'new' so the other side knows to reload message area
+                try {
+                    await supabaseClient
+                        .from('chat_notifications')
+                        .upsert([{ chat_username: chatUser, status: 'new' }], { onConflict: 'chat_username' });
+                } catch (e) {
+                    console.error('[chat-room] failed to set notification to new', e);
+                }
+
+                // Render newly sent message locally (avoid waiting for realtime)
+                if (data && data.length > 0) {
+                    data.forEach(m => appendMessage(m));
+                } else {
+                    loadMessages();
+                }
         } catch (err) {
             alert('Failed to send message. Try again.');
             chatInput.value = text;
@@ -262,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Polling fallback: fetch messages newer than lastFetchedAt every few seconds
-    let lastFetchedAt = null;
     const POLL_INTERVAL_MS = 3000;
     let pollTimer = null;
 
@@ -289,10 +317,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Poll conversation notification row for 'new' status and trigger message-area reload
+    async function pollNotifications() {
+        if (!chatUser) return;
+        try {
+            const { data, error } = await supabaseClient
+                .from('chat_notifications')
+                .select('status')
+                .eq('chat_username', chatUser)
+                .single();
+
+            if (error) {
+                // If row doesn't exist yet, ignore
+                // console.debug('[chat-room] pollNotifications error', error);
+                return;
+            }
+
+            if (data && data.status === 'new') {
+                console.debug('[chat-room] pollNotifications found new -> reloading messages');
+                await loadMessages();
+                // loadMessages will clear the notification to 'no'
+            }
+        } catch (err) {
+            console.error('[chat-room] pollNotifications error', err);
+        }
+    }
+
     // Start polling after initial load
     function startPolling() {
         if (pollTimer) return;
-        pollTimer = setInterval(pollNewMessages, POLL_INTERVAL_MS);
+        pollTimer = setInterval(() => {
+            pollNotifications();
+            pollNewMessages();
+        }, POLL_INTERVAL_MS);
     }
 
     function stopPolling() {
