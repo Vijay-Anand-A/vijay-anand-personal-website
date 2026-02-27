@@ -176,25 +176,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Real-time: listen for new messages
+    console.debug('[chat-room] initializing realtime subscription', { adminMode, chatUser });
     supabaseClient
         .channel('chat-realtime')
         .on('postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'chat_messages' },
             (payload) => {
+                console.debug('[chat-room] realtime payload received', payload);
                 const msg = payload.new;
-                // Only handle messages related to this chat
-                if (msg.sender_username === chatUser || msg.receiver_username === chatUser || (adminMode && (msg.sender_username === 'admin' || msg.receiver_username === 'admin'))) {
+
+                // Only handle messages strictly between admin and this chatUser
+                const relates = (msg.sender_username === chatUser && msg.receiver_username === 'admin')
+                    || (msg.sender_username === 'admin' && msg.receiver_username === chatUser);
+
+                if (relates) {
                     // Append the incoming message to the DOM to avoid full reloads
                     try {
+                        console.debug('[chat-room] appending message', { msg, chatUser, adminMode });
                         appendMessage(msg);
                     } catch (e) {
+                        console.error('[chat-room] appendMessage failed, falling back to loadMessages', e);
                         // Fallback: reload full list
                         loadMessages();
                     }
+                } else {
+                    console.debug('[chat-room] payload not related to this chat, ignoring', { msg, chatUser });
                 }
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.debug('[chat-room] subscription status', status);
+        });
 
     // Append a single message bubble to the chat messages container
     function appendMessage(msg) {
