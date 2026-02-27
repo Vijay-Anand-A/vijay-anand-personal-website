@@ -112,6 +112,22 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    // Track appended message ids to avoid duplicates when both realtime and polling run
+    const appendedMessageIds = new Set();
+
+    // When we load the full list, mark existing ids
+    function markLoadedMessageIds(messages) {
+        if (!messages) return;
+        messages.forEach(m => {
+            if (m && m.id) appendedMessageIds.add(String(m.id));
+        });
+        // Update last fetched timestamp to the latest message timestamp
+        if (messages.length > 0) {
+            const last = messages[messages.length - 1];
+            lastFetchedAt = last.created_at;
+        }
+    }
+
     // Load messages
     async function loadMessages() {
         try {
@@ -123,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (error) throw error;
             renderMessages(data);
+            markLoadedMessageIds(data || []);
         } catch (err) {
             console.error('Load messages error:', err);
         }
@@ -211,6 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Append a single message bubble to the chat messages container
     function appendMessage(msg) {
         if (!msg || !msg.message) return;
+        // ignore duplicate
+        if (msg.id && appendedMessageIds.has(String(msg.id))) return;
 
         // Determine who is the current sender in this UI
         const currentSender = adminMode ? 'admin' : chatUser;
@@ -236,5 +255,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chatMessages.appendChild(bubble);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        if (msg.id) appendedMessageIds.add(String(msg.id));
+        // keep lastFetchedAt up-to-date
+        lastFetchedAt = msg.created_at;
     }
+
+    // Polling fallback: fetch messages newer than lastFetchedAt every few seconds
+    let lastFetchedAt = null;
+    const POLL_INTERVAL_MS = 3000;
+    let pollTimer = null;
+
+    async function pollNewMessages() {
+        if (!chatUser) return;
+        try {
+            // If we don't have lastFetchedAt, fetch the latest message timestamp
+            const filter = lastFetchedAt
+                ? `and(or(and(sender_username.eq.${chatUser},receiver_username.eq.admin),and(sender_username.eq.admin,receiver_username.eq.${chatUser})),created_at.gt.${lastFetchedAt})`
+                : `or(and(sender_username.eq.${chatUser},receiver_username.eq.admin),and(sender_username.eq.admin,receiver_username.eq.${chatUser}))`;
+
+            const { data, error } = await supabaseClient
+                .from('chat_messages')
+                .select('*')
+                .or(filter)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+            if (data && data.length > 0) {
+                data.forEach(m => appendMessage(m));
+            }
+        } catch (err) {
+            console.error('[chat-room] polling error', err);
+        }
+    }
+
+    // Start polling after initial load
+    function startPolling() {
+        if (pollTimer) return;
+        pollTimer = setInterval(pollNewMessages, POLL_INTERVAL_MS);
+    }
+
+    function stopPolling() {
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
+
+    // Ensure we stop polling on unload
+    window.addEventListener('beforeunload', () => {
+        stopPolling();
+    });
 });
