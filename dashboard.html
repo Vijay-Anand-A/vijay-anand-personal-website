@@ -11,9 +11,38 @@
     <style>
         .dashboard-topbar {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
             padding: 1.5rem 5%;
+        }
+
+        .dashboard-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dashboard-nav a {
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dashboard-nav a:hover {
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-color);
+        }
+
+        .dashboard-nav a.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
         }
 
         .topbar-right {
@@ -160,7 +189,12 @@
 
         @media (max-width: 768px) {
             .dashboard-topbar {
-                justify-content: center;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .dashboard-nav {
+                order: 2;
             }
 
             .topbar-right {
@@ -180,6 +214,10 @@
 
 <body>
     <div class="dashboard-topbar">
+        <nav class="dashboard-nav">
+            <a href="dashboard.html" class="active"><i class="fas fa-envelope"></i> Enquiries</a>
+            <a href="chat.html"><i class="fas fa-comments"></i> Chat settings</a>
+        </nav>
         <div class="topbar-right">
             <span class="welcome-text">Welcome, Vijay</span>
             <div class="profile-menu" id="profileMenu">

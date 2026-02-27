@@ -10,6 +10,138 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chat-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-modal-overlay.open {
+            display: flex;
+        }
+
+        .chat-modal-box {
+            background: var(--glass-bg, rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-modal-box h3 {
+            margin: 0 0 0.5rem 0;
+            color: #f1f5f9;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-modal-box h3 i {
+            color: #818cf8;
+        }
+
+        .chat-modal-box p.subtitle {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin: 0 0 1.5rem 0;
+        }
+
+        .chat-modal-box .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .chat-modal-box label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .chat-modal-box input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.6);
+            color: #f1f5f9;
+            font-size: 0.95rem;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .chat-modal-box input:focus {
+            border-color: #6366f1;
+        }
+
+        .chat-modal-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .chat-btn-cancel {
+            flex: 1;
+            padding: 0.7rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .chat-btn-cancel:hover {
+            background: rgba(148, 163, 184, 0.1);
+        }
+
+        .chat-btn-login {
+            flex: 1;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .chat-btn-login:hover {
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .chat-status {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-align: center;
+            min-height: 1.2rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -21,6 +153,7 @@
                 <li><a href="#about">About</a></li>
                 <li><a href="#services">Services</a></li>
                 <li><a href="#contact">Contact</a></li>
+                <li><a href="#" id="chatMenuLink"><i class="fas fa-comments"></i> Chat</a></li>
                 <li><a href="login.html" target="_blank">Login</a></li>
             </ul>
             <div class="hamburger">
@@ -159,6 +292,29 @@
             </div>
         </section>
     </main>
+
+    <!-- Chat Login Modal -->
+    <div class="chat-modal-overlay" id="chatLoginModal">
+        <div class="chat-modal-box">
+            <h3><i class="fas fa-comments"></i> Chat Login</h3>
+            <p class="subtitle">Enter your chat credentials to continue</p>
+            <form id="chatLoginForm">
+                <div class="form-group">
+                    <label for="chatUser">Username</label>
+                    <input type="text" id="chatUser" name="chatUser" placeholder="Enter chat username" required>
+                </div>
+                <div class="form-group">
+                    <label for="chatPass">Password</label>
+                    <input type="password" id="chatPass" name="chatPass" placeholder="Enter chat password" required>
+                </div>
+                <div class="chat-modal-actions">
+                    <button type="button" class="chat-btn-cancel" id="chatCancelBtn">Cancel</button>
+                    <button type="submit" class="chat-btn-login">Login</button>
+                </div>
+                <div class="chat-status" id="chatStatus"></div>
+            </form>
+        </div>
+    </div>
 
     <footer>
         <p>&copy; Vijay Anand A. All rights reserved.</p>

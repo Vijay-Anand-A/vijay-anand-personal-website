@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.observe(el);
     });
 
-    // Contact form submit handler - Supabase
+    //------------------------------- Contact form submit handler - Supabase
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
         contactForm.addEventListener('submit', async function (e) {
@@ -124,4 +124,84 @@ document.addEventListener('DOMContentLoaded', () => {
             header.style.boxShadow = 'none';
         }
     });
+
+    // --------------------------------- Chat Login Modal
+    const chatMenuLink = document.getElementById('chatMenuLink');
+    const chatLoginModal = document.getElementById('chatLoginModal');
+    const chatCancelBtn = document.getElementById('chatCancelBtn');
+    const chatLoginForm = document.getElementById('chatLoginForm');
+    const chatStatus = document.getElementById('chatStatus');
+
+    if (chatMenuLink && chatLoginModal) {
+        // Open modal when Chat menu clicked
+        chatMenuLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            navLinks.classList.remove('active');
+            const icon = hamburger.querySelector('i');
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+            chatLoginModal.classList.add('open');
+            chatStatus.textContent = '';
+        });
+
+        // Cancel button
+        chatCancelBtn.addEventListener('click', () => {
+            chatLoginModal.classList.remove('open');
+            chatLoginForm.reset();
+            chatStatus.textContent = '';
+        });
+
+        // Click outside modal to close
+        chatLoginModal.addEventListener('click', (e) => {
+            if (e.target === chatLoginModal) {
+                chatLoginModal.classList.remove('open');
+                chatLoginForm.reset();
+                chatStatus.textContent = '';
+            }
+        });
+
+        // Chat login form submit
+        chatLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('chatUser').value.trim();
+            const password = document.getElementById('chatPass').value;
+            const loginBtn = chatLoginForm.querySelector('.chat-btn-login');
+
+            loginBtn.textContent = 'Checking...';
+            loginBtn.disabled = true;
+            chatStatus.textContent = '';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('chat_users')
+                    .select('*')
+                    .eq('chat_username', username)
+                    .eq('chat_password', password)
+                    .single();
+
+                if (error || !data) {
+                    chatStatus.textContent = 'Invalid username or password.';
+                    chatStatus.style.color = '#f87171';
+                } else if (data.approval !== 'approved') {
+                    chatStatus.textContent = "Can't able to chat. Your account is not approved yet.";
+                    chatStatus.style.color = '#fbbf24';
+                } else {
+                    chatStatus.textContent = 'Login successful! Redirecting...';
+                    chatStatus.style.color = '#34d399';
+                    // Save chat user info in session
+                    sessionStorage.setItem('chatUser', data.chat_username);
+                    sessionStorage.setItem('chatUserId', data.id);
+                    setTimeout(() => {
+                        window.location.href = 'chat-room.html';
+                    }, 500);
+                }
+            } catch (err) {
+                chatStatus.textContent = 'Error connecting to server. Try again.';
+                chatStatus.style.color = '#f87171';
+            } finally {
+                loginBtn.textContent = 'Login';
+                loginBtn.disabled = false;
+            }
+        });
+    }
 });
