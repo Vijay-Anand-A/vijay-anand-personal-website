@@ -182,11 +182,47 @@ document.addEventListener('DOMContentLoaded', () => {
             { event: 'INSERT', schema: 'public', table: 'chat_messages' },
             (payload) => {
                 const msg = payload.new;
-                // Only reload if message is related to this user
-                if (msg.sender_username === chatUser || msg.receiver_username === chatUser) {
-                    loadMessages();
+                // Only handle messages related to this chat
+                if (msg.sender_username === chatUser || msg.receiver_username === chatUser || (adminMode && (msg.sender_username === 'admin' || msg.receiver_username === 'admin'))) {
+                    // Append the incoming message to the DOM to avoid full reloads
+                    try {
+                        appendMessage(msg);
+                    } catch (e) {
+                        // Fallback: reload full list
+                        loadMessages();
+                    }
                 }
             }
         )
         .subscribe();
+
+    // Append a single message bubble to the chat messages container
+    function appendMessage(msg) {
+        if (!msg || !msg.message) return;
+
+        // Determine who is the current sender in this UI
+        const currentSender = adminMode ? 'admin' : chatUser;
+        const isSent = msg.sender_username === currentSender;
+        const bubbleClass = isSent ? 'msg-sent' : 'msg-received';
+        const senderLabel = !isSent ? `<div class="msg-sender-name">${msg.sender_username === 'admin' ? 'Admin' : msg.sender_username}</div>` : '';
+
+        const timeHtml = `<div class="msg-time">${formatTime(msg.created_at)}</div>`;
+        const bubble = document.createElement('div');
+        bubble.className = `msg-bubble ${bubbleClass}`;
+        bubble.innerHTML = `${senderLabel}${(msg.message || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}${timeHtml}`;
+
+        // If there's a date divider needed, add it
+        const lastDivider = chatMessages.querySelector('.chat-date-divider:last-of-type');
+        const lastDividerText = lastDivider ? lastDivider.textContent.trim() : '';
+        const msgDate = formatDate(msg.created_at);
+        if (msgDate !== lastDividerText) {
+            const divider = document.createElement('div');
+            divider.className = 'chat-date-divider';
+            divider.innerHTML = `<span>${msgDate}</span>`;
+            chatMessages.appendChild(divider);
+        }
+
+        chatMessages.appendChild(bubble);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 });
